@@ -22,6 +22,7 @@
 		<position>logo-mobile</position>
 		<position>navbar-mobile</position>
 		<position>header-mobile</position>
+		<position>header-center</position>
 		<position>dialog-mobile</position>
 		<position>top</position>
 		<position>sidebar</position>
@@ -44,8 +45,11 @@
 		</fields>
 	</config>
 	<files>
-		<filename>templateDetails.xml</filename>
+		<folder>html</folder>
+		<folder>js</folder>
 		<folder>less</folder>
+		<folder>templates</folder>
+		<filename>templateDetails.xml</filename>
 	</files>
 	<inheritable>0</inheritable>
 	<parent>yootheme</parent>
