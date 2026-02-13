@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="plugin" group="system" method="upgrade">
+	<name>PLG_SYSTEM_LUBIMOVKA</name>
+	<author>RadicalMart Team</author>
+	<creationDate>February 2026</creationDate>
+	<copyright>Copyright © 2026 RadicalMart. All rights reserved.</copyright>
+	<license>https://www.gnu.org/copyleft/gpl.html GNU/GPL</license>
+	<authorEmail>info@radicalmart.ru</authorEmail>
+	<authorUrl>https://radicalmart.ru/</authorUrl>
+	<version>0.0.1-dev</version>
+	<description>PLG_SYSTEM_LUBIMOVKA_DESCRIPTION</description>
+	<namespace path="src">Joomla\Plugin\System\Lubimovka</namespace>
+	<scriptfile>script.php</scriptfile>
+	<languages folder="language">
+		<language tag="en-GB">en-GB/plg_system_lubimovka.ini</language>
+		<language tag="en-GB">en-GB/plg_system_lubimovka.sys.ini</language>
+		<language tag="ru-RU">ru-RU/plg_system_lubimovka.ini</language>
+		<language tag="ru-RU">ru-RU/plg_system_lubimovka.sys.ini</language>
+	</languages>
+	<files>
+		<folder>services</folder>
+		<folder plugin="lubimovka">src</folder>
+	</files>
+</extension>

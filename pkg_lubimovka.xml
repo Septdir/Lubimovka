@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="package" method="upgrade">
+	<name>PKG_LUBIMOVKA</name>
+	<packagename>lubimovka</packagename>
+	<author>RadicalMart Team</author>
+	<creationDate>February 2026</creationDate>
+	<copyright>Copyright © 2026 RadicalMart. All rights reserved.</copyright>
+	<license>https://www.gnu.org/copyleft/gpl.html GNU/GPL</license>
+	<authorEmail>info@radicalmart.ru</authorEmail>
+	<authorUrl>https://radicalmart.ru/</authorUrl>
+	<version>0.0.1-dev</version>
+	<description>PKG_LUBIMOVKA_DESCRIPTION</description>
+	<scriptfile>script.php</scriptfile>
+	<languages folder="language">
+		<language tag="en-GB">en-GB/pkg_lubimovka.sys.ini</language>
+		<language tag="ru-RU">ru-RU/pkg_lubimovka.sys.ini</language>
+	</languages>
+	<files>
+		<folder type="plugin" group="system" id="lubimovka">plg_system_lubimovka</folder>
+		<folder type="template" client="site" id="tpl_yootheme_lubimovka">tpl_yootheme_lubimovka</folder>
+	</files>
+</extension>
