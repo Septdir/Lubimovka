@@ -47,11 +47,10 @@ if (!$hideTotal)
 			<span uk-icon="lubimovka_cart" class="uk-icon"></span>
 		</a>
 	<?php else: ?>
-		<button radicalmart-cart="display_module" class="uk-button uk-button-link radicalmart-icon"
+		<button radicalmart-cart="display_module" class="uk-button uk-button-link radicalmart-icon uk-position-relative"
 				uk-tooltip>
-			<span uk-icon="lubimovka_cart" class="uk-icon uk-margin-small-right"></span>
-			<span class="uk-badge quantity uk-position-top-right"
-				  radicalmart-cart-display="total.products"
+			<span uk-icon="lubimovka_cart" class="uk-icon"></span>
+			<span class="uk-badge quantity uk-position-center" radicalmart-cart-display="total.products"
 				  style="display:none">0</span>
 		</button>
 	<?php endif; ?>
