@@ -14,6 +14,7 @@ namespace Joomla\Plugin\System\Lubimovka\Console;
 \defined('_JEXEC') or die;
 
 use Joomla\Component\RadicalMart\Administrator\Console\AbstractCommand;
+use Joomla\Component\RadicalMartBonuses\Administrator\Helper\PointsHelper;
 use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\ParameterType;
 
@@ -29,6 +30,8 @@ class PointsDoubleFixCommand extends AbstractCommand
 	 * @since  __DEPLOY_VERSION__
 	 */
 	protected static $defaultName = 'lubimovka:orders:fix_double_points';
+
+	protected string $start_date = '2026-02-01 00:00:00';
 
 	/**
 	 * Command methods for step by step run.
@@ -51,7 +54,7 @@ class PointsDoubleFixCommand extends AbstractCommand
 		$query = $db->getQuery(true)
 			->select('COUNT(id)')
 			->from($db->quoteName('#__radicalmart_orders'))
-			->where($db->quoteName('created') . ' > ' . $db->quote('2025-12-01 00:00:00'));
+			->where($db->quoteName('created') . ' > ' . $db->quote($this->start_date));
 		$total = $db->setQuery($query)->loadResult();
 		$this->finishProgressBar();
 
@@ -59,7 +62,7 @@ class PointsDoubleFixCommand extends AbstractCommand
 		{
 			return;
 		}
-
+		$this->ioStyle->text('Get records');
 		$this->startProgressBar($total, true);
 		$last      = 0;
 		$customers = [];
@@ -70,7 +73,7 @@ class PointsDoubleFixCommand extends AbstractCommand
 				->select(['id', 'created_by', 'number'])
 				->from($db->quoteName('#__radicalmart_orders'))
 				->where($db->quoteName('id') . ' > :last')
-				->where($db->quoteName('created') . ' > ' . $db->quote('2025-12-01 00:00:00'))
+				->where($db->quoteName('created') . ' > ' . $db->quote($this->start_date))
 				->bind(':last', $last, ParameterType::INTEGER)
 				->order($db->quoteName('id') . ' ASC');
 			$order = $db->setQuery($query, 0, 1)->loadObject();
@@ -99,20 +102,22 @@ class PointsDoubleFixCommand extends AbstractCommand
 
 
 			$query = $db->getQuery(true)
-				->select(['bp.id', 'bp.points'])
+				->select(['bp.id'])
 				->from($db->quoteName('#__radicalmart_bonuses_points', 'bp'))
-				->where($db->quoteName('bp.context') . ' = ' . $db->quote('com_radicalmart.order'))
-				->where('JSON_VALUE(bp.data, ' . $db->quote('$.order_id') . ') = :order_id')
-				->where('JSON_VALUE(bp.data, ' . $db->quote('$.reason') . ') = ' . $db->quote('accrual'))
-				->bind(':order_id', $last, ParameterType::INTEGER);
+				->where($db->quoteName('bp.context') . ' = ' . $db->quote('com_radicalmart_bonuses.points'))
+				->where('JSON_VALUE(bp.data, ' . $db->quote('$.fix_double') . ') = 1')
+				->where('JSON_VALUE(bp.data, ' . $db->quote('$.reason') . ') = ' . $db->quote('create'));
+			$exist = $db->setQuery($query)->loadObject();
+			if (!empty($exist))
+			{
+				$this->advanceProgressBar();
+				continue;
+			}
 
-
-			$points = 0;
 			foreach ($records as $r => $record)
 			{
 				if ($r > 0)
 				{
-					$points += $record->points;
 					if (!isset($customers[$order->created_by]))
 					{
 						$customers[$order->created_by] = 0;
@@ -123,6 +128,25 @@ class PointsDoubleFixCommand extends AbstractCommand
 			$orders[] = $order->number;
 
 			$this->advanceProgressBar();
+		}
+		$this->finishProgressBar();
+
+		$this->ioStyle->text('Create Records');
+		$this->startProgressBar(count($customers), true);
+		foreach ($customers as $customer => $points)
+		{
+			if ($points > 0)
+			{
+				$points = $points * -1;
+				PointsHelper::createRecord($customer, $points, 'com_radicalmart_bonuses.points', [
+					'fix_double' => 1,
+					'reason'     => 'create',
+					'created_by' => -1,
+					'text'       => 'Корректировка баллов'
+				]);
+			}
+
+			$this->advanceProgressBar($customer);
 		}
 		$this->finishProgressBar();
 
