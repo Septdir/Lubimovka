@@ -45,6 +45,8 @@ class LubimovkaPointsProvider extends PointsProvider
 			return;
 		}
 
+		$this->accrualShippingPoints($order, $records, $model);
+
 		foreach ($records as $record)
 		{
 			if ($record->reason === 'accrual')
@@ -52,8 +54,6 @@ class LubimovkaPointsProvider extends PointsProvider
 				return;
 			}
 		}
-
-		$this->accrualShippingPoints($order, $records, $model);
 
 		if (empty($order->plugins['bonuses']['codes']))
 		{
@@ -155,6 +155,11 @@ class LubimovkaPointsProvider extends PointsProvider
 			$points = 1500;
 		}
 
+		if ($this->checkOrderPointsRecordExist($order->id, 'accrual_shipping'))
+		{
+			return;
+		}
+
 		$record_id = PointsHelper::createRecord($order->created_by, $points,
 			'com_radicalmart.order', [
 				'order_id'   => $order->id,
@@ -213,6 +218,11 @@ class LubimovkaPointsProvider extends PointsProvider
 
 		$app     = Factory::getApplication();
 		$user_id = (!empty($app->getIdentity()) && !empty($app->getIdentity()->id)) ? $app->getIdentity()->id : -1;
+
+		if ($this->checkOrderPointsRecordExist($order->id, 'refund_shipping'))
+		{
+			return;
+		}
 
 		$record_id = PointsHelper::createRecord($order->created_by, $points, 'com_radicalmart.order', [
 			'order_id'   => $order->id,
