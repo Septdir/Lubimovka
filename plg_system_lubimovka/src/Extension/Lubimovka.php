@@ -29,6 +29,7 @@ use Joomla\Event\Event;
 use Joomla\Event\SubscriberInterface;
 use Joomla\Plugin\System\Lubimovka\Console\OrdersCancelCommand;
 use Joomla\Plugin\System\Lubimovka\Console\OrdersLogsFixCommand;
+use Joomla\Plugin\System\Lubimovka\Console\PointsDoubleFixCommand;
 use Joomla\Plugin\System\Lubimovka\Provider\LubimovkaPointsProvider;
 use Joomla\Registry\Registry;
 use Joomla\Utilities\ArrayHelper;
@@ -76,6 +77,7 @@ class Lubimovka extends CMSPlugin implements SubscriberInterface
 	{
 		$commands[] = OrdersCancelCommand::class;
 		$commands[] = OrdersLogsFixCommand::class;
+		$commands[] = PointsDoubleFixCommand::class;
 	}
 
 	/**
@@ -134,7 +136,6 @@ class Lubimovka extends CMSPlugin implements SubscriberInterface
 	 */
 	public function onRadicalMartPrepareAdministratorToolbar(string $context, Toolbar $toolbar): void
 	{
-
 		if ($context !== 'com_radicalmart_bonuses.code')
 		{
 			return;
