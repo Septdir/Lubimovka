@@ -27,7 +27,6 @@ use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\ParameterType;
 use Joomla\Event\Event;
 use Joomla\Event\SubscriberInterface;
-use Joomla\Plugin\System\Lubimovka\Console\OrdersCancelCommand;
 use Joomla\Plugin\System\Lubimovka\Console\OrdersLogsFixCommand;
 use Joomla\Plugin\System\Lubimovka\Console\PointsDoubleFixCommand;
 use Joomla\Plugin\System\Lubimovka\Provider\LubimovkaPointsProvider;
@@ -75,7 +74,6 @@ class Lubimovka extends CMSPlugin implements SubscriberInterface
 	 */
 	public function onRadicalMartRegisterCLICommands(array &$commands, Registry $params): void
 	{
-		$commands[] = OrdersCancelCommand::class;
 		$commands[] = OrdersLogsFixCommand::class;
 		$commands[] = PointsDoubleFixCommand::class;
 	}
