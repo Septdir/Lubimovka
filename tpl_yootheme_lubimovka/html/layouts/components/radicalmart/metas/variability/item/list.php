@@ -78,7 +78,7 @@ if (!$hidePrice)
 				</div>
 			<?php elseif (!$hidePrice): ?>
 				<?php if ($hasDiscount): ?>
-					<div class="uk-text-muted">
+					<div class="uk-text-danger">
 						<?php echo Text::_('COM_RADICALMART_PRICE_DISCOUNT'); ?>
 					</div>
 				<?php endif; ?>
