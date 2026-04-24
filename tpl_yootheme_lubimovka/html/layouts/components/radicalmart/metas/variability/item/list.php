@@ -11,6 +11,7 @@
 
 \defined('_JEXEC') or die;
 
+use Joomla\CMS\Date\Date;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Layout\LayoutHelper;
 use Joomla\Component\RadicalMart\Administrator\Helper\ParamsHelper;
@@ -32,7 +33,8 @@ $hidePrice = (ParamsHelper::getComponentParams()->get('hide_prices', 0) || !empt
 $hasDiscount = false;
 if (!$hidePrice)
 {
-	$currency = PriceHelper::getCurrency($product->price['currency'])['group'];
+	$currency    = PriceHelper::getCurrency($product->price['currency'])['group'];
+	$currentDate = (new Date())->toUnix();
 	foreach ($product->products as $item)
 	{
 		if (empty($item['prices'][$currency]))
@@ -40,7 +42,11 @@ if (!$hidePrice)
 			continue;
 		}
 
-		if (!empty($item['prices'][$currency]['discount_enable']))
+		if (!empty($item['prices'][$currency]['discount'])
+				&& !empty($item['prices'][$currency]['discount_enable'])
+				&& (empty($item['prices'][$currency]['discount_end'])
+						|| (new Date($item['prices'][$currency]['discount_end']))->toUnix() >= $currentDate)
+		)
 		{
 			$hasDiscount = true;
 		}
