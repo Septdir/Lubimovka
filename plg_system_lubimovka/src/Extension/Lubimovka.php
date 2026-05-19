@@ -27,6 +27,7 @@ use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\ParameterType;
 use Joomla\Event\Event;
 use Joomla\Event\SubscriberInterface;
+use Joomla\Plugin\System\Lubimovka\Console\FixCustomersCommand;
 use Joomla\Plugin\System\Lubimovka\Console\OrdersFindCommand;
 use Joomla\Plugin\System\Lubimovka\Console\OrdersLogsFixCommand;
 use Joomla\Plugin\System\Lubimovka\Console\PointsDoubleFixCommand;
@@ -78,6 +79,7 @@ class Lubimovka extends CMSPlugin implements SubscriberInterface
 		$commands[] = OrdersLogsFixCommand::class;
 		$commands[] = PointsDoubleFixCommand::class;
 		$commands[] = OrdersFindCommand::class;
+		$commands[] = FixCustomersCommand::class;
 	}
 
 	/**
