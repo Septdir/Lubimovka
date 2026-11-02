@@ -19,7 +19,7 @@ use Joomla\Database\DatabaseAwareTrait;
 use Joomla\Database\ParameterType;
 use Joomla\Registry\Registry;
 
-class OrdersLogsFixCommand extends AbstractCommand
+class FixCommand extends AbstractCommand
 {
 	use DatabaseAwareTrait;
 
@@ -30,7 +30,7 @@ class OrdersLogsFixCommand extends AbstractCommand
 	 *
 	 * @since  __DEPLOY_VERSION__
 	 */
-	protected static $defaultName = 'lubimovka:orders:fix_logs';
+	protected static $defaultName = 'lubimovka:fix';
 
 	/**
 	 * Command methods for step by step run.
@@ -40,10 +40,11 @@ class OrdersLogsFixCommand extends AbstractCommand
 	 * @since __DEPLOY_VERSION__
 	 */
 	protected array $methods = [
-		'executeCommand',
+		'cleanDatabase',
+		'fixLogs',
 	];
 
-	public function executeCommand(): void
+	public function fixLogs(): void
 	{
 		$this->ioStyle->title('Fix orders logs');
 
@@ -74,9 +75,8 @@ class OrdersLogsFixCommand extends AbstractCommand
 			foreach ($rows as $row)
 			{
 				$last = (int) $row->id;
-				if (!str_contains($row->logs, '"bonuses"'))
+				if (!str_contains($row->logs, '"points_accrual_shipping"'))
 				{
-
 					$this->advanceProgressBar();
 					continue;
 				}
@@ -85,20 +85,15 @@ class OrdersLogsFixCommand extends AbstractCommand
 				$needUpdate = false;
 				foreach ($row->logs as &$log)
 				{
-					if (empty($log['plugin']) || $log['plugin'] !== 'bonuses')
+					if (empty($log['plugin']) || $log['plugin'] !== 'bonuses_lubimovka')
 					{
 						continue;
 					}
 
-					if (str_starts_with($log['action'], 'points_'))
+					if (str_starts_with($log['action'], 'points_accrual_shipping'))
 					{
-						$log['plugin'] = 'bonuses_points';
-						$needUpdate    = true;
-					}
-					elseif ($log['action'] === 'create_codes')
-					{
-						$log['plugin'] = 'bonuses_codes';
-						$log['action'] = 'bonuses_codes_create';
+						$log['plugin'] = 'lubimovka';
+						$log['group']  = 'system';
 						$needUpdate    = true;
 					}
 				}
@@ -118,5 +113,55 @@ class OrdersLogsFixCommand extends AbstractCommand
 			}
 		}
 
+	}
+
+	public function cleanDatabase(): void
+	{
+		$this->ioStyle->title('Clean database');
+
+		$this->ioStyle->text('Get tables');
+		$db   = $this->getDatabase();
+		$list = $db->getTableList();
+		$this->startProgressBar(count($list), true);
+		$result = [];
+		foreach ($list as $table)
+		{
+			if (str_contains($table, 'sppagebuilder'))
+			{
+				$result[] = $table;
+			}
+			elseif (str_contains($table, 'akeeba'))
+			{
+				$result[] = $table;
+			}
+
+			$this->advanceProgressBar();
+		}
+		$this->finishProgressBar();
+
+
+		$this->ioStyle->text('Drop tables');
+		$this->startProgressBar(count($result), true);
+		$second = [];
+		foreach ($result as $table)
+		{
+			try
+			{
+				$db->dropTable($table);
+			}
+			catch (\Throwable $e)
+			{
+				$second[] = $table;
+				continue;
+
+			}
+
+			$this->advanceProgressBar();
+		}
+		foreach ($second as $table) {
+			$db->dropTable($table);
+			$this->advanceProgressBar();
+		}
+		$this->finishProgressBar();
 	}
 }

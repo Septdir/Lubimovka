@@ -170,8 +170,8 @@ class LubimovkaPointsProvider extends PointsProvider
 		$app     = Factory::getApplication();
 		$user_id = (!empty($app->getIdentity()) && !empty($app->getIdentity()->id)) ? $app->getIdentity()->id : -1;
 		$model->addLog($order->id, 'points_accrual_shipping', [
-			'plugin'      => 'bonuses_lubimovka',
-			'group'       => 'radicalmart',
+			'plugin'      => 'lubimovka',
+			'group'       => 'system',
 			'record_id'   => $record_id,
 			'points'      => $points,
 			'user_id'     => $user_id,

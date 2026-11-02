@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form addfieldprefix="Joomla\Component\RadicalMart\Administrator\Field">
+	<fieldset name="bonuses_discounts_from_total" label="PLG_SYSTEM_LUBIMOVKA_BONUSES_DISCOUNTS_FROM_TOTAL">
+		<field name="bonuses_discounts_from_total" type="radio"
+			   label="PLG_SYSTEM_LUBIMOVKA_BONUSES_DISCOUNTS_FROM_TOTAL_ENABLE"
+			   class="btn-group btn-group-yesno"
+			   default="0">
+			<option value="0">JNO</option>
+			<option value="1">JYES</option>
+		</field>
+		<field name="bonuses_discounts_from_total_discounts" type="subform"
+			   label="PLG_SYSTEM_LUBIMOVKA_BONUSES_DISCOUNTS_FROM_TOTAL_DISCOUNTS"
+			   multiple="true">
+			<form>
+				<field name="bonuses_discounts_from_total_sum" type="price"
+					   label="PLG_SYSTEM_LUBIMOVKA_BONUSES_DISCOUNTS_FROM_TOTAL_DISCOUNTS_SUM"
+					   currency="RUB"/>
+				<field name="bonuses_discounts_from_total_discounts_discount" type="text"
+					   label="PLG_SYSTEM_LUBIMOVKA_BONUSES_DISCOUNTS_FROM_TOTAL_DISCOUNTS_DISCOUNT"/>
+			</form>
+		</field>
+	</fieldset>
+</form>
