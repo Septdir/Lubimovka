@@ -8,6 +8,18 @@
 			<option value="0">JNO</option>
 			<option value="1">JYES</option>
 		</field>
+		<field name="bonuses_discounts_from_total_excludes" type="subform"
+			   label="PLG_SYSTEM_LUBIMOVKA_BONUSES_DISCOUNTS_FROM_TOTAL_EXCLUDES"
+			   multiple="true"
+			   buttons="add,remove">
+			<form>
+				<field name="bonuses_discounts_from_total_excludes_id" type="modal_product"
+					   parentclass="stack"
+					   hideLabel="true"
+					   icons="true"
+					   buttons="clear,select"/>
+			</form>
+		</field>
 		<field name="bonuses_discounts_from_total_discounts" type="subform"
 			   label="PLG_SYSTEM_LUBIMOVKA_BONUSES_DISCOUNTS_FROM_TOTAL_DISCOUNTS"
 			   multiple="true">

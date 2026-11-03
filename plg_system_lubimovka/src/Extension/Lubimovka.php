@@ -130,16 +130,39 @@ class Lubimovka extends CMSPlugin implements SubscriberInterface
 	}
 
 	/**
-	 * Listener for the `onRadicalMartRegisterCLICommands` event.
+	 * Listener for the `onRadicalMartPrepareForm` event.
 	 *
-	 * @param   array     $commands  Updated commands array.
-	 * @param   Registry  $params    RadicalMart params.
+	 * @param   string   $context  Context selector string.
+	 * @param   Toolbar  $toolbar  Toolbar object.
 	 *
 	 * @since __DEPLOY_VERSION__
 	 */
-	public function onRadicalMartRegisterCLICommands(array &$commands, Registry $params): void
+	public function onRadicalMartPrepareAdministratorToolbar(string $context, Toolbar $toolbar): void
 	{
-		$commands[] = FixCommand::class;
+		if ($context !== 'com_radicalmart_bonuses.code')
+		{
+			return;
+		}
+
+		$id = $this->getApplication()->input->getInt('id');
+		if (empty($id))
+		{
+			return;
+		}
+
+		$text   = Text::_('PLG_SYSTEM_LUBIMOVKA_EXPORT_CODE');
+		$html   = LayoutHelper::render('components.radicalmart.administrator.toolbar.link', [
+			'link'  => Route::_(
+				'index.php?option=com_ajax&plugin=lubimovka&group=system&action=exportCode&format=raw' .
+				'&code_id=' . $id,
+				false),
+			'text'  => $text,
+			'icon'  => ' fa-file-export',
+			'order' => 10,
+			'id'    => 'exportCode'
+		]);
+		$button = new CustomButton('exportCode', $text, ['html' => $html]);
+		$toolbar->appendButton($button);
 	}
 
 	/**
@@ -241,16 +264,34 @@ class Lubimovka extends CMSPlugin implements SubscriberInterface
 	                                                               int    $customer_id, int $order_id,
 	                                                               string $currencyCode): void
 	{
-		$discount_value = 0;
+		$allowed_products = [];
+		$discount_value   = 0;
 		if ($context === 'com_radicalmart.checkout')
 		{
 			$discounts = $this->getDiscountsFromTotalParams();
 			if ($discounts)
 			{
+				$exclude = [];
+				$params  = (new Registry(ParamsHelper::getComponentParams()
+					->get('bonuses_discounts_from_total_excludes', [])))->toArray();
+				foreach ($params as $param)
+				{
+					if (!empty($param['bonuses_discounts_from_total_excludes_id']))
+					{
+						$exclude[] = (int) $param['bonuses_discounts_from_total_excludes_id'];
+					}
+				}
+
 				$products_sum = 0;
-				foreach ($products as $product)
+				foreach ($products as $pk => $product)
 				{
 					$products_sum += $product->order['sum_final'];
+					if (!empty($exclude) && in_array($product->id, $exclude))
+					{
+						continue;
+					}
+
+					$allowed_products[$pk] = $product;
 				}
 
 				foreach ($discounts as $sum => $discount)
@@ -265,14 +306,42 @@ class Lubimovka extends CMSPlugin implements SubscriberInterface
 		elseif (!empty($formData['plugins']['bonuses']['discounts_from_total']))
 		{
 			$discount_value = NumberHelper::integerClean($formData['plugins']['bonuses']['discounts_from_total']);
+			$exclude        = [];
+			foreach ($formData['products'] as $product)
+			{
+				if (isset($product['plugins']['bonuses']['discounts_from_total_enabled'])
+					&& empty($product['plugins']['bonuses']['discounts_from_total_enabled']))
+				{
+					$exclude[] = $product['id'];
+				}
+			}
+			foreach ($products as $pk => $product)
+			{
+				if (!empty($exclude) && in_array($product->id, $exclude))
+				{
+					continue;
+				}
+
+				$allowed_products[$pk] = $product;
+			}
 		}
 
-		foreach ($products as $product)
+		DiscountHelper::applyPercentDiscountToProducts($allowed_products, $discount_value, 'discount_from_total');
+		foreach ($products as $product_key => $product)
 		{
-			$product->order['plugins']['bonuses']['discounts_from_total'] = $discount_value;
+			if (isset($allowed_products[$product_key]))
+			{
+				$product                                                              = $allowed_products[$product_key];
+				$product->order['plugins']['bonuses']['discounts_from_total_enabled'] = 1;
+				$product->order['plugins']['bonuses']['discounts_from_total']         = $discount_value;
+			}
+			else
+			{
+				$product->order['plugins']['bonuses']['discounts_from_total_enabled'] = 0;
+				$product->order['plugins']['bonuses']['discounts_from_total']         = 0;
+				$product->order['plugins']['bonuses']['discount_from_total']          = 0;
+			}
 		}
-
-		DiscountHelper::applyPercentDiscountToProducts($products, $discount_value, 'discount_from_total');
 	}
 
 	/**
@@ -339,7 +408,17 @@ class Lubimovka extends CMSPlugin implements SubscriberInterface
 		{
 			return;
 		}
-		echo '<pre>', print_r($formData['plugins']['bonuses']['discounts_from_total'], true), '</pre>';
+
+		$field = $xml->addChild('field');
+		$field->addAttribute('name', 'discounts_from_total_enabled');
+		$field->addAttribute('type', 'list');
+		$field->addAttribute('label', 'PLG_SYSTEM_LUBIMOVKA_BONUSES_DISCOUNTS_FROM_TOTAL_PRODUCT_ENABLED');
+		$field->addAttribute('default', 1);
+
+		$option = $field->addChild('option', 'JNO');
+		$option->addAttribute('value', 0);
+		$option = $field->addChild('option', 'JYES');
+		$option->addAttribute('value', 1);
 
 		$field = $xml->addChild('field');
 		$field->addAttribute('name', 'discounts_from_total');
@@ -352,6 +431,55 @@ class Lubimovka extends CMSPlugin implements SubscriberInterface
 		$field->addAttribute('type', 'price');
 		$field->addAttribute('label', 'PLG_SYSTEM_LUBIMOVKA_BONUSES_DISCOUNTS_FROM_TOTAL_PRODUCT_DISCOUNT');
 		$field->addAttribute('readonly', 'true');
+	}
+
+	/**
+	 * Listener for `onRadicalMartGetOrderLogs` event.
+	 *
+	 * @param   string|null  $context  Context selector string.
+	 * @param   array        $log      Log data.
+	 *
+	 * @throws \Exception
+	 *
+	 * @since  __DEPLOY_VERSION__
+	 */
+	public function onRadicalMartGetOrderLogs(?string $context = null, array &$log = []): void
+	{
+		if (in_array($log['action'], ['points_accrual_shipping', 'points_refund_shipping']))
+		{
+			$points = (float) $log['points'];
+			if (!str_contains($log['action'], '_refund') && $points < 0)
+			{
+				$points = $points * -1;
+			}
+			$log['action_text'] = '';
+
+			$log['action_text'] = Text::plural('COM_RADICALMART_BONUSES_' . $log['action'] . '_N_ITEMS',
+				$points);
+
+			if (!empty($log['customer_id']))
+			{
+				$customer = UserHelper::getUser((int) $log['customer_id']);
+				if (!empty($customer->name))
+				{
+					$log['message'] = $customer->name;
+				}
+			}
+		}
+	}
+
+
+	/**
+	 * Listener for the `onRadicalMartRegisterCLICommands` event.
+	 *
+	 * @param   array     $commands  Updated commands array.
+	 * @param   Registry  $params    RadicalMart params.
+	 *
+	 * @since __DEPLOY_VERSION__
+	 */
+	public function onRadicalMartRegisterCLICommands(array &$commands, Registry $params): void
+	{
+		$commands[] = FixCommand::class;
 	}
 
 	/**
@@ -380,42 +508,6 @@ class Lubimovka extends CMSPlugin implements SubscriberInterface
 		{
 			throw new \Exception('Lubimovka - ' . $e->getMessage(), $e->getCode(), $e);
 		}
-	}
-
-	/**
-	 * Listener for the `onRadicalMartPrepareForm` event.
-	 *
-	 * @param   string   $context  Context selector string.
-	 * @param   Toolbar  $toolbar  Toolbar object.
-	 *
-	 * @since __DEPLOY_VERSION__
-	 */
-	public function onRadicalMartPrepareAdministratorToolbar(string $context, Toolbar $toolbar): void
-	{
-		if ($context !== 'com_radicalmart_bonuses.code')
-		{
-			return;
-		}
-
-		$id = $this->getApplication()->input->getInt('id');
-		if (empty($id))
-		{
-			return;
-		}
-
-		$text   = Text::_('PLG_SYSTEM_LUBIMOVKA_EXPORT_CODE');
-		$html   = LayoutHelper::render('components.radicalmart.administrator.toolbar.link', [
-			'link'  => Route::_(
-				'index.php?option=com_ajax&plugin=lubimovka&group=system&action=exportCode&format=raw' .
-				'&code_id=' . $id,
-				false),
-			'text'  => $text,
-			'icon'  => ' fa-file-export',
-			'order' => 10,
-			'id'    => 'exportCode'
-		]);
-		$button = new CustomButton('exportCode', $text, ['html' => $html]);
-		$toolbar->appendButton($button);
 	}
 
 	/**
@@ -540,42 +632,6 @@ class Lubimovka extends CMSPlugin implements SubscriberInterface
 
 		echo htmlspecialchars_decode(ob_get_clean(), ENT_NOQUOTES);
 	}
-
-	/**
-	 * Listener for `onRadicalMartGetOrderLogs` event.
-	 *
-	 * @param   string|null  $context  Context selector string.
-	 * @param   array        $log      Log data.
-	 *
-	 * @throws \Exception
-	 *
-	 * @since  __DEPLOY_VERSION__
-	 */
-	public function onRadicalMartGetOrderLogs(?string $context = null, array &$log = []): void
-	{
-		if (in_array($log['action'], ['points_accrual_shipping', 'points_refund_shipping']))
-		{
-			$points = (float) $log['points'];
-			if (!str_contains($log['action'], '_refund') && $points < 0)
-			{
-				$points = $points * -1;
-			}
-			$log['action_text'] = '';
-
-			$log['action_text'] = Text::plural('COM_RADICALMART_BONUSES_' . $log['action'] . '_N_ITEMS',
-				$points);
-
-			if (!empty($log['customer_id']))
-			{
-				$customer = UserHelper::getUser((int) $log['customer_id']);
-				if (!empty($customer->name))
-				{
-					$log['message'] = $customer->name;
-				}
-			}
-		}
-	}
-
 
 	/**
 	 * Method to get total discount params.

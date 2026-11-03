@@ -144,18 +144,14 @@ return new class () implements ServiceProviderInterface {
 				 */
 				public function postflight(string $type, InstallerAdapter $adapter): bool
 				{
-					$installer = $adapter->getParent();
-					if ($type !== 'uninstall')
+					// Run updates script
+					if ($type === 'update')
 					{
-						// Run updates script
-						if ($type === 'update')
+						foreach ($this->updateMethods as $method)
 						{
-							foreach ($this->updateMethods as $method)
+							if (method_exists($this, $method))
 							{
-								if (method_exists($this, $method))
-								{
-									$this->$method($adapter);
-								}
+								$this->$method($adapter);
 							}
 						}
 					}
