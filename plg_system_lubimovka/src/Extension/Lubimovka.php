@@ -285,11 +285,11 @@ class Lubimovka extends CMSPlugin implements SubscriberInterface
 				$products_sum = 0;
 				foreach ($products as $pk => $product)
 				{
-					$products_sum += $product->order['sum_final'];
 					if (!empty($exclude) && in_array($product->id, $exclude))
 					{
 						continue;
 					}
+					$products_sum += $product->order['sum_final'];
 
 					$allowed_products[$pk] = $product;
 				}
